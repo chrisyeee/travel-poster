@@ -21,7 +21,7 @@ export async function recommendSpots(city) {
     const response = await axios.post(
       config.ai.apiUrl,
       {
-        model: 'nano-banana-fast',
+        model: 'deepseek-chat',
         messages: [
           { role: 'user', content: prompt }
         ],

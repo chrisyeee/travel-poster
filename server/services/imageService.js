@@ -7,35 +7,35 @@ import config from '../config/index.js';
 const STYLE_CONFIGS = {
   '清新自然': {
     description: '浅绿浅蓝配色，自然风光，清新治愈',
-    keywords: 'pastel colors, soft lighting, nature, fresh, airy, travel vibe, lifestyle photography'
+    keywords: '浅绿色调，清新风格，自然景色，阳光明媚，柔和光线，旅行氛围，生活美学'
   },
   '文艺复古': {
     description: '暖色调，复古胶片感，电影质感',
-    keywords: 'warm tones, vintage film, cinematic, retro aesthetic, soft grain, nostalgic mood'
+    keywords: '暖黄色调，复古胶片质感，电影画面，怀旧氛围，颗粒感，暖色滤镜'
   },
   '时尚都市': {
     description: '高级灰+亮色点缀，现代都市感，夜景',
-    keywords: 'modern city, urban style, night lights, fashion, chic, sophisticated, neon accents'
+    keywords: '现代城市天际线，霓虹灯光，高级灰色调，精致时尚，夜景璀璨，都市感'
   },
   '卡通可爱': {
     description: '柔和马卡龙色系，卡通插画风格，萌系',
-    keywords: 'cute illustration style, pastel macaron colors, kawaii, adorable, playful, soft edges'
+    keywords: '马卡龙柔和色彩，可爱卡通插画风格，萌系元素，圆润线条，童话风格'
   },
-  '韩系 ins': {
+  '韩系ins': {
     description: '韩风杂志感，白色系为主，简约高级',
-    keywords: 'korean magazine style, white minimalist, clean composition, aesthetic, monochrome'
+    keywords: '韩式简约风格，白色主调，干净构图，高级感，杂志排版，单色系'
   },
   '胶片感': {
     description: '复古胶片颗粒感，暖色滤镜，人文气息',
-    keywords: 'film grain texture, warm vintage filter, nostalgic, candid photography, golden hour'
+    keywords: '复古胶片颗粒，暖色滤镜，逆光拍摄，人文纪实，金色阳光，怀旧感'
   },
   '油画质感': {
     description: '莫兰迪色调，艺术感，氛围感',
-    keywords: 'morandi color palette, oil painting texture, artistic, soft brushstrokes, elegant'
+    keywords: '莫兰迪色系，油画笔触质感，艺术氛围，柔和色调，高级感，朦胧美'
   },
   '日系治愈': {
     description: '日系杂志风，逆光感，温暖治愈',
-    keywords: 'japanese magazine style, backlight, warm sunshine, healing, peaceful, serene'
+    keywords: '日系杂志风格，逆光温暖阳光，治愈系画面，宁静氛围，柔和生活感'
   }
 };
 
@@ -44,27 +44,34 @@ const STYLE_CONFIGS = {
  * 生成适合小红书女性用户风格的打卡地图
  */
 export async function optimizePrompt(city, style, spots) {
-  const spotNames = spots.map(s => s.name).join('、');
   const styleConfig = STYLE_CONFIGS[style] || STYLE_CONFIGS['清新自然'];
 
-  const prompt = `你是一个专业的小红书旅行博主，擅长写旅行打卡地图的AI生图提示词。
+  // 构建详细的景点描述
+  const spotDescriptions = spots.map((s, i) => {
+    return `第${i + 1}站：${s.name} - ${s.description || '著名景点'}`;
+  }).join('\n');
 
-请为以下信息生成一个精美的打卡地图图片提示词：
+  const prompt = `你是一个专业的小红书旅行博主，擅长写AI生图提示词。
 
-目的地：${city}
-选择风格：${style} - ${styleConfig.description}
-打卡景点：${spotNames}
+请根据以下信息生成一个精美的旅行打卡地图图片提示词：
 
-要求：
-1. 图片是一张精美的旅行打卡地图，包含多个景点打卡点和连接路线
+【目的地】${city}
+【选择风格】${style} - ${styleConfig.description}
+【打卡景点】
+${spotDescriptions}
+
+【生成要求】
+1. 图片是一张精美的旅行打卡地图，必须包含所有上述景点的标志性特征
 2. 风格要求：${styleConfig.keywords}
-3. 主要面向18-30岁女性用户，审美清新高级
-4. 地图风格要像小红书爆款旅行笔记：手绘地图、景点标记、可爱图标
-5. 整体氛围：旅行的美好、探索的期待、生活的仪式感
-6. 不要任何文字标签（如#打卡 #旅行等）
-7. 不要出现人脸或人物特写
+3. 面向18-30岁中国女性用户，审美清新高级
+4. 每个景点要有清晰可辨认的代表性元素
+5. 地图风格：小红书爆款旅行笔记风格，手绘地图，可爱景点图标，连接路线
+6. 整体氛围：旅行的美好、探索的期待、生活的仪式感
+7. 不要任何文字标签（如#打卡 #旅行等 hashtag）
+8. 不要出现人脸或人物特写
+9. 必须用中文描述各个景点的标志性元素
 
-请用英文生成这个提示词，直接返回纯文本，不要JSON，不要代码块，不要解释：
+请直接返回用于AI生图的中文提示词，直接返回纯文本，不要JSON，不要代码块，不要解释：
 `;
 
   try {
@@ -78,7 +85,7 @@ export async function optimizePrompt(city, style, spots) {
           { role: 'user', content: prompt }
         ],
         temperature: 0.8,
-        max_tokens: 500
+        max_tokens: 800
       },
       {
         headers: {
@@ -95,8 +102,9 @@ export async function optimizePrompt(city, style, spots) {
 
   } catch (error) {
     console.error('提示词优化失败:', error.message, error.response?.data);
-    // 如果优化失败，使用默认提示词
-    return `${city} travel check-in map, ${spotNames}, hand-drawn style, cute markers, pastel colors, Xiaohongshu aesthetic, travel notebook style, soft and dreamy atmosphere`;
+    // 如果优化失败，使用包含景点名称的默认提示词
+    const spotNames = spots.map(s => s.name).join('、');
+    return `小红书风格旅行打卡地图，${city}著名景点：${spotNames}，手绘地图风格，可爱景点标记，连接路线，${styleConfig.keywords}，清新治愈风格，无文字标签`;
   }
 }
 
@@ -108,19 +116,7 @@ export async function generatePoster(city, style, spots) {
   console.log('正在生成精美打卡地图...');
   const optimizedPrompt = await optimizePrompt(city, style, spots);
 
-  // 构建 JSON 格式的 prompt 传给 Nano Banana Pro
-  const promptData = {
-    prompt: optimizedPrompt,
-    city: city,
-    style: style,
-    spots: spots.map(s => s.name),
-    imageSize: "1240x1660",
-    aspectRatio: "3:4",
-    quality: "ultra detailed, high quality,xiaohongshu aesthetic, travel map style"
-  };
-
-  const prompt = JSON.stringify(promptData, null, 2);
-
+  // 直接使用优化后的中文提示词
   console.log('正在调用 Nano Banana Pro 图片生成...');
 
   try {
@@ -128,7 +124,7 @@ export async function generatePoster(city, style, spots) {
       config.nanobananaPro.apiUrl,
       {
         model: "nano-banana-pro",
-        prompt: prompt,
+        prompt: optimizedPrompt,
         aspectRatio: "3:4",
         imageSize: "1K",
         webHook: "-1",
