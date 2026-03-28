@@ -7,7 +7,7 @@ const app = express();
 
 // 中间件
 app.use(cors({
-  origin: config.clientUrl,
+  origin: '*',
   credentials: true
 }));
 app.use(express.json());
