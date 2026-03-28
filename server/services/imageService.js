@@ -2,56 +2,58 @@ import axios from 'axios';
 import config from '../config/index.js';
 
 /**
- * 风格配置 - 针对小红书女性用户
+ * 风格配置 - 针对小红书女性用户，英文描述用于图片生成
  */
 const STYLE_CONFIGS = {
   '清新自然': {
-    art_style: '水彩手绘插画风格，柔和笔触',
-    background: '淡雅米色纸张，细腻纹理',
-    color_palette: '浅绿色、淡蓝色、柔粉色、奶白色',
-    line_work: '轻柔线条，手绘涂鸦感'
+    art_style: 'Watercolor hand-drawn illustration, soft brushstrokes, isometric flat design',
+    background: 'Light beige parchment paper texture, delicate paper grain',
+    color_palette: 'Pastel green, light blue, soft pink, cream white, terracotta accents',
+    line_work: 'Soft charcoal outlines, hand-drawn doodle style',
+    atmosphere: 'Fresh, airy, cozy, adventurous, nostalgic'
   },
   '文艺复古': {
-    art_style: '复古胶片插画风格，电影海报质感',
-    background: '做旧纸张纹理，泛黄色调',
-    color_palette: '暖黄色、棕褐色、焦糖色、复古红',
-    line_work: '炭笔线条，复古网点质感'
+    art_style: 'Vintage travel map illustration, detailed 2D flat vector art, retro film texture',
+    background: 'Aged parchment paper, warm yellow tones, vintage texture',
+    color_palette: 'Terracotta red, jade green, warm vintage tones, soft blue',
+    line_work: 'Charcoal lines, vintage stipple texture',
+    atmosphere: 'Nostalgic, cozy, highly detailed, movie poster quality'
   },
   '韩系ins': {
-    art_style: '韩式简约插画，杂志排版感',
-    background: '纯白纸张，大量留白',
-    color_palette: '白色、浅灰色、淡粉色、墨绿色',
-    line_work: '极简线条，几何感'
+    art_style: 'Korean minimalist illustration, magazine layout aesthetic, clean lines',
+    background: 'Pure white paper, generous white space, clean and airy',
+    color_palette: 'White, light gray, soft pink, dark green, muted tones',
+    line_work: 'Minimalist lines, geometric feel'
   },
   '卡通可爱': {
-    art_style: '卡通插画风格，圆润可爱',
-    background: '奶油色纸张，卡通纹理',
-    color_palette: '马卡龙色：粉色、薄荷绿、淡黄色、薰衣草紫',
-    line_work: '圆润线条，粗细均匀'
+    art_style: 'Cute cartoon illustration style, rounded and adorable shapes, kawaii aesthetic',
+    background: 'Cream color paper, cartoon texture, playful feel',
+    color_palette: 'Macaron colors: pink, mint green, pale yellow, lavender purple',
+    line_work: 'Rounded lines, uniform thickness'
   },
   '胶片感': {
-    art_style: '胶片摄影插画，颗粒感',
-    background: '暖调纸张，柔焦效果',
-    color_palette: '暖橙色调、复古老电影感、褪色效果',
-    line_work: '柔和虚化，电影感'
+    art_style: 'Film photography illustration, grainy texture, cinematic feel',
+    background: 'Warm toned paper, soft focus effect, vintage film look',
+    color_palette: 'Warm orange tones, retro movie feel, faded effect',
+    line_work: 'Soft blur, cinematic quality'
   },
   '日系治愈': {
-    art_style: '日系杂志插画，逆光氛围',
-    background: '柔光纸张，梦幻感',
-    color_palette: '暖白色、淡粉色、浅蓝色、蜜糖色',
-    line_work: '逆光剪影，柔和光晕'
+    art_style: 'Japanese magazine illustration, backlight atmosphere, dreamy glow',
+    background: 'Soft light paper, dreamy feel, ethereal atmosphere',
+    color_palette: 'Warm white, soft pink, light blue, honey amber',
+    line_work: 'Backlight silhouettes, soft glow'
   },
   '油画质感': {
-    art_style: '油画质感插画，艺术画廊风',
-    background: '画布纹理，梵高感',
-    color_palette: '莫兰迪色系：灰蓝、灰粉、豆沙绿',
-    line_work: '笔触质感，朦胧美'
+    art_style: 'Oil painting texture illustration, art gallery style, brushstroke质感',
+    background: 'Canvas texture, Van Gogh inspired, artistic feel',
+    color_palette: 'Morandi colors: gray blue, gray pink, dusty green, muted earth tones',
+    line_work: 'Brushstroke texture, hazy beauty'
   },
   '时尚都市': {
-    art_style: '时尚插画，都市霓虹感',
-    background: '深色调纸张，霓虹光效',
-    color_palette: '深蓝、紫色、粉色霓虹、玫瑰金',
-    line_work: '光效线条，LED感'
+    art_style: 'Fashion illustration, urban neon vibe, modern city aesthetic',
+    background: 'Dark toned paper, neon light effects',
+    color_palette: 'Dark blue, purple, pink neon, rose gold accents',
+    line_work: 'Light effect lines, LED feel'
   }
 };
 
@@ -62,87 +64,60 @@ const STYLE_CONFIGS = {
 export async function optimizePrompt(city, style, spots) {
   const styleConfig = STYLE_CONFIGS[style] || STYLE_CONFIGS['清新自然'];
 
-  // 构建景点详细信息供DeepSeek参考
-  const spotInfo = spots.map((s, i) => ({
-    name: s.name,
-    description: s.description || '',
-    duration: s.duration || '1-2小时',
-    order: i + 1
-  }));
+  const prompt = `You are a professional travel poster designer. Generate a detailed JSON prompt for creating a travel打卡 map poster.
 
-  const prompt = `你是一个专业的小红书旅行打卡地图设计师。请为以下目的地生成一个精美的JSON格式图片生成提示词。
+【Destination】${city}
+【Style】${style}
+【Style Parameters】
+- Art Style: ${styleConfig.art_style}
+- Background: ${styleConfig.background}
+- Color Palette: ${styleConfig.color_palette}
+- Line Work: ${styleConfig.line_work}
+- Atmosphere: ${styleConfig.atmosphere}
 
-【目的地】${city}
-【选择风格】${style}
-【风格参数】
-- 艺术风格：${styleConfig.art_style}
-- 背景：${styleConfig.background}
-- 色调：${styleConfig.color_palette}
-- 线条：${styleConfig.line_work}
+【Landmarks Information】
+${spots.map((s, i) => `Spot ${i + 1}: ${s.name}, Duration: ${s.duration || '1-2 hours'}, Features: ${s.description || 'Famous check-in spot'}`).join('\n')}
 
-【景点信息】
-${spots.map((s, i) => `景点${i + 1}：${s.name}，游玩时长：${s.duration || '1-2小时'}，特色：${s.description || '著名打卡地'}`).join('\n')}
-
-【生成要求 - 必须返回JSON格式】
-请生成一个完整的JSON对象，包含以下结构（所有文字必须是中文）：
+【JSON Output Requirements - MUST return valid JSON】
+Generate a complete JSON object with this EXACT structure:
 
 {
-  "poster_type": "精美旅行打卡地图海报",
+  "poster_info": {
+    "type": "Travel打卡map poster",
+    "theme_city": "City name",
+    "design_goal": "Generate map illustrations with Chinese text directly in one step"
+  },
   "visual_style": {
-    "art_style": "艺术风格描述",
-    "background": "背景描述",
-    "color_palette": "色调描述",
-    "line_work": "线条风格",
-    "atmosphere": "整体氛围描述"
+    "art_style": "Art style description in English",
+    "background": "Background description in English",
+    "color_palette": "Color palette description in English",
+    "route_style": "Road-like path connecting landmarks (solid road path, winding road)",
+    "atmosphere": "Atmosphere description in English"
   },
   "layout_elements": {
-    "title_section": {
-      "position": "顶部居中",
-      "content": "城市名+旅行打卡地图",
-      "font_style": "手绘艺术字体"
-    },
-    "map_section": {
-      "position": "画面中央",
-      "style": "手绘地图风格",
-      "route_style": "实线路径连接各景点，有起点到终点路线感",
-      "route_markers": "起点标记、终点标记、途经点标记"
-    },
-    "landmarks": [
-      {
-        "name": "景点名称",
-        "icon": "标志性图标描述（如塔、桥、楼阁等）",
-        "position": "在地图上的位置",
-        "info_bubble": {
-          "name": "景点名",
-          "duration": "游玩时长",
-          "tip": "小贴士或特色"
-        }
-      }
-    ],
-    "compass": {
-      "position": "右上角",
-      "style": "简约手绘指南针"
-    }
+    "title": "Top title: City name + 探索之旅 (Exploration Journey)",
+    "map_features": "Hand-drawn vintage compass with directions: 北(N), 南(S), 东(E), 西(W), road paths connecting spots",
+    "decorations": "Chinese traditional clouds, green mountains, small figures traveling by bicycle"
   },
-  "decoration_details": [
-    "手绘树木",
-    "简约云朵",
-    "当地特色花卉",
-    "阳光光影效果",
-    "装饰性虚线框"
+  "landmarks_with_text": [
+    {
+      "english_prompt": "Detailed visual description of landmark (e.g., broken bridge, white causeway for West Lake)",
+      "chinese_text_to_render": "Text bubbles saying exactly: \"景点名\", \"门票：X元\", \"游玩：时长\""
+    }
   ],
-  "image_prompt": "一段完整的中文描述，用于AI生图，包含：画面整体描述、地图风格、景点视觉呈现、氛围感、色彩描述等"
+  "final_image_prompt": "Complete English prompt for image generation, MUST include: 1) Visual English descriptions of landmarks 2) Chinese text labels like 'text bubbles saying exactly \"景点名\", \"门票：免费\", \"游玩：半天\"' 3) Road path connecting all landmarks 4) Hand-drawn compass with 北(N) 南(S) 东(E) 西(W) 5) Chinese traditional decorations"
 }
 
-【重要约束】
-1. 所有中文文字描述都要简洁清晰
-2. 每个景点要有：名称、游玩时长、特色描述（info_bubble）
-3. 路线连接必须是实线路径，不是虚线
-4. 画面要丰富有层次，不能平淡
-5. image_prompt字段要是完整的中文描述，可直接用于AI生图
-6. 返回的JSON必须能被JSON.parse解析
+【Critical Requirements】
+1. Each landmark MUST have both english_prompt (visual description) and chinese_text_to_render
+2. chinese_text_to_render format: "Text bubbles saying exactly: \"景点名\", \"门票：X元\", \"游玩：时长\""
+3. final_image_prompt MUST contain: "text bubbles saying exactly \"中文内容\"" for rendering Chinese text
+4. Route must be solid road-like path connecting landmarks, NOT dashed lines
+5. Compass MUST have Chinese directions: 北(N) 南(S) 东(E) 西(W)
+6. The poster must have rich details and depth, not flat or boring
+7. Output MUST be valid JSON parseable by JSON.parse
 
-请直接返回JSON，不要有任何其他内容：`;
+Return ONLY JSON, no other text:`;
 
   try {
     console.log('正在调用 DeepSeek 生成JSON提示词...');
@@ -197,51 +172,33 @@ ${spots.map((s, i) => `景点${i + 1}：${s.name}，游玩时长：${s.duration 
  * 生成默认的JSON提示词
  */
 function generateDefaultJsonPrompt(city, style, spots, styleConfig) {
-  const landmarks = spots.map((s, i) => ({
-    name: s.name,
-    icon: `标志性建筑或景观插画`,
-    position: `第${i + 1}站`,
-    info_bubble: {
-      name: s.name,
-      duration: s.duration || '1-2小时',
-      tip: s.description || '值得打卡'
-    }
+  const landmarksWithText = spots.map((s, i) => ({
+    english_prompt: `${s.name} iconic landmark illustration, ${s.description || 'famous check-in spot'}, ${styleConfig.art_style}`,
+    chinese_text_to_render: `Text bubbles saying exactly: \"${s.name}\", \"门票：${s.ticket || '免费'}\", \"游玩：${s.duration || '1-2小时'}\"`
   }));
 
+  const chineseLabels = spots.map(s => `"${s.name}", "门票：${s.ticket || '免费'}", "游玩：${s.duration || '1-2小时'}"`).join(', ');
+
   return JSON.stringify({
-    poster_type: '精美旅行打卡地图海报',
+    poster_info: {
+      type: 'Travel打卡map poster',
+      theme_city: city,
+      design_goal: 'Generate map illustrations with Chinese text directly in one step'
+    },
     visual_style: {
       art_style: styleConfig.art_style,
       background: styleConfig.background,
       color_palette: styleConfig.color_palette,
-      line_work: styleConfig.line_work,
-      atmosphere: '旅行的美好氛围，探索的期待感'
+      route_style: 'Road-like path connecting landmarks (solid road path, winding road)',
+      atmosphere: styleConfig.atmosphere
     },
     layout_elements: {
-      title_section: {
-        position: '顶部居中',
-        content: `${city}旅行打卡地图`,
-        font_style: '手绘艺术字体'
-      },
-      map_section: {
-        position: '画面中央',
-        style: '手绘旅行地图风格',
-        route_style: '实线路径连接各景点',
-        route_markers: '起点、终点、途经点标记'
-      },
-      landmarks: landmarks,
-      compass: {
-        position: '右上角',
-        style: '简约手绘指南针'
-      }
+      title: `${city}探索之旅`,
+      map_features: 'Hand-drawn vintage compass with directions: 北(N), 南(S), 东(E), 西(W), solid road paths connecting all landmarks',
+      decorations: 'Chinese traditional clouds, green mountains, small figures traveling by bicycle'
     },
-    decoration_details: [
-      '手绘树木',
-      '简约云朵',
-      '阳光光影',
-      '装饰框'
-    ],
-    image_prompt: `小红书风格旅行打卡地图，${city}景点：${spots.map(s => s.name).join('、')}，手绘地图风格，${styleConfig.art_style}，${styleConfig.background}，${styleConfig.color_palette}，实线连接各景点，画面丰富有层次感，氛围美好，无文字标签`
+    landmarks_with_text: landmarksWithText,
+    final_image_prompt: `Travel打卡map poster for ${city} featuring ${spots.map(s => s.name).join(', ')}, ${styleConfig.art_style}, ${styleConfig.background}, ${styleConfig.color_palette}, solid road-like path connecting all landmarks, hand-drawn vintage compass with 北(N) 南(S) 东(E) 西(W), Chinese traditional clouds and green mountains decorations, text bubbles saying exactly ${chineseLabels}, rich details and depth, ${styleConfig.atmosphere}`
   }, null, 2);
 }
 
