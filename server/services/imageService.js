@@ -3,114 +3,149 @@ import config from '../config/index.js';
 
 /**
  * 风格配置 - 针对小红书女性用户
- * 包含视觉风格描述和氛围关键词
  */
 const STYLE_CONFIGS = {
   '清新自然': {
-    description: '清新自然风格',
-    atmosphere: '阳光明媚，清新空气，绿树成荫，碧水蓝天',
-    colors: '浅绿色、淡蓝色、白色为主色调，清新明亮',
-    mood: '放松、治愈、舒适的旅行氛围'
+    art_style: '水彩手绘插画风格，柔和笔触',
+    background: '淡雅米色纸张，细腻纹理',
+    color_palette: '浅绿色、淡蓝色、柔粉色、奶白色',
+    line_work: '轻柔线条，手绘涂鸦感'
   },
   '文艺复古': {
-    description: '文艺复古风格',
-    atmosphere: '暖黄灯光，旧时光质感，岁月沉淀，文化气息',
-    colors: '暖黄色、棕褐色、米白色，复古色调',
-    mood: '怀旧、文艺、有故事感的旅行氛围'
+    art_style: '复古胶片插画风格，电影海报质感',
+    background: '做旧纸张纹理，泛黄色调',
+    color_palette: '暖黄色、棕褐色、焦糖色、复古红',
+    line_work: '炭笔线条，复古网点质感'
   },
   '韩系ins': {
-    description: '韩系简约风格',
-    atmosphere: '干净利落，高级感，留白美学',
-    colors: '白色、浅灰色、淡粉色，极简色调',
-    mood: '精致、时尚、都市感'
+    art_style: '韩式简约插画，杂志排版感',
+    background: '纯白纸张，大量留白',
+    color_palette: '白色、浅灰色、淡粉色、墨绿色',
+    line_work: '极简线条，几何感'
   },
   '卡通可爱': {
-    description: '卡通可爱风格',
-    atmosphere: '童趣梦幻，糖果色彩，萌系元素',
-    colors: '马卡龙色系：粉色、薄荷绿、淡黄色',
-    mood: '可爱、甜蜜、少女心'
+    art_style: '卡通插画风格，圆润可爱',
+    background: '奶油色纸张，卡通纹理',
+    color_palette: '马卡龙色：粉色、薄荷绿、淡黄色、薰衣草紫',
+    line_work: '圆润线条，粗细均匀'
   },
   '胶片感': {
-    description: '胶片复古老电影风格',
-    atmosphere: '电影感镜头，胶片颗粒，暖色光晕',
-    colors: '暖橙色调，复古滤镜，颗粒质感',
-    mood: '电影感、故事感、时光感'
+    art_style: '胶片摄影插画，颗粒感',
+    background: '暖调纸张，柔焦效果',
+    color_palette: '暖橙色调、复古老电影感、褪色效果',
+    line_work: '柔和虚化，电影感'
   },
   '日系治愈': {
-    description: '日系杂志治愈风格',
-    atmosphere: '逆光拍摄，阳光透射，温柔光影',
-    colors: '暖白、淡粉、浅蓝，柔和色调',
-    mood: '宁静、治愈、温柔'
+    art_style: '日系杂志插画，逆光氛围',
+    background: '柔光纸张，梦幻感',
+    color_palette: '暖白色、淡粉色、浅蓝色、蜜糖色',
+    line_work: '逆光剪影，柔和光晕'
   },
   '油画质感': {
-    description: '油画艺术质感风格',
-    atmosphere: '艺术画廊感，笔触质感，朦胧美',
-    colors: '莫兰迪色系：灰蓝、灰粉、高级灰',
-    mood: '艺术、优雅、有品位'
+    art_style: '油画质感插画，艺术画廊风',
+    background: '画布纹理，梵高感',
+    color_palette: '莫兰迪色系：灰蓝、灰粉、豆沙绿',
+    line_work: '笔触质感，朦胧美'
   },
   '时尚都市': {
-    description: '时尚都市夜景风格',
-    atmosphere: '霓虹灯光，现代建筑，都市夜景',
-    colors: '深蓝、紫色、粉色霓虹，璀璨灯光',
-    mood: '时尚、活力、现代'
+    art_style: '时尚插画，都市霓虹感',
+    background: '深色调纸张，霓虹光效',
+    color_palette: '深蓝、紫色、粉色霓虹、玫瑰金',
+    line_work: '光效线条，LED感'
   }
 };
 
 /**
- * 使用 DeepSeek 优化图片生成的提示词
- * 生成适合小红书女性用户风格的精美打卡地图
+ * 使用 DeepSeek 生成完整的JSON提示词结构
+ * 这个JSON会直接传给 Nano Banana Pro
  */
 export async function optimizePrompt(city, style, spots) {
   const styleConfig = STYLE_CONFIGS[style] || STYLE_CONFIGS['清新自然'];
 
-  // 构建详细的景点信息
-  const spotDetails = spots.map((s, i) => {
-    return `
-【景点${i + 1}】${s.name}
-- 游玩时长：${s.duration || '1-2小时'}
-- 特色描述：${s.description || s.name + '著名打卡地'}
-`;
-  }).join('\n');
+  // 构建景点详细信息供DeepSeek参考
+  const spotInfo = spots.map((s, i) => ({
+    name: s.name,
+    description: s.description || '',
+    duration: s.duration || '1-2小时',
+    order: i + 1
+  }));
 
-  const prompt = `你是一个专业的小红书旅行博主，擅长写AI生图提示词。
-
-请为以下旅行打卡地图生成一个精美丰富的图片提示词：
+  const prompt = `你是一个专业的小红书旅行打卡地图设计师。请为以下目的地生成一个精美的JSON格式图片生成提示词。
 
 【目的地】${city}
 【选择风格】${style}
-- 视觉氛围：${styleConfig.atmosphere}
-- 色调：${styleConfig.colors}
-- 整体感觉：${styleConfig.mood}
+【风格参数】
+- 艺术风格：${styleConfig.art_style}
+- 背景：${styleConfig.background}
+- 色调：${styleConfig.color_palette}
+- 线条：${styleConfig.line_work}
 
-【打卡景点信息】${spotDetails}
+【景点信息】
+${spots.map((s, i) => `景点${i + 1}：${s.name}，游玩时长：${s.duration || '1-2小时'}，特色：${s.description || '著名打卡地'}`).join('\n')}
 
-【生成要求 - 非常重要】
-1. 这是一张精美的小红书旅行打卡地图，必须具备以下要素：
-   - 地图背景：手绘风格地图，有纹理感
-   - 景点标记：用该景点最标志性的视觉元素来呈现（如建筑轮廓、景观特征）
-   - 路线连接：景点之间用【实线路径】连接，有起点到终点的路线感，像真实地图上的道路
-   - 打卡图标：每个景点有醒目的打卡标记（可以用圆形/星形等图标）
+【生成要求 - 必须返回JSON格式】
+请生成一个完整的JSON对象，包含以下结构（所有文字必须是中文）：
 
-2. 每个景点的视觉呈现（重要！）：
-   ${spots.map((s, i) => `   - ${s.name}：要用能让人一眼认出的标志性元素表现`).join('\n')}
+{
+  "poster_type": "精美旅行打卡地图海报",
+  "visual_style": {
+    "art_style": "艺术风格描述",
+    "background": "背景描述",
+    "color_palette": "色调描述",
+    "line_work": "线条风格",
+    "atmosphere": "整体氛围描述"
+  },
+  "layout_elements": {
+    "title_section": {
+      "position": "顶部居中",
+      "content": "城市名+旅行打卡地图",
+      "font_style": "手绘艺术字体"
+    },
+    "map_section": {
+      "position": "画面中央",
+      "style": "手绘地图风格",
+      "route_style": "实线路径连接各景点，有起点到终点路线感",
+      "route_markers": "起点标记、终点标记、途经点标记"
+    },
+    "landmarks": [
+      {
+        "name": "景点名称",
+        "icon": "标志性图标描述（如塔、桥、楼阁等）",
+        "position": "在地图上的位置",
+        "info_bubble": {
+          "name": "景点名",
+          "duration": "游玩时长",
+          "tip": "小贴士或特色"
+        }
+      }
+    ],
+    "compass": {
+      "position": "右上角",
+      "style": "简约手绘指南针"
+    }
+  },
+  "decoration_details": [
+    "手绘树木",
+    "简约云朵",
+    "当地特色花卉",
+    "阳光光影效果",
+    "装饰性虚线框"
+  ],
+  "image_prompt": "一段完整的中文描述，用于AI生图，包含：画面整体描述、地图风格、景点视觉呈现、氛围感、色彩描述等"
+}
 
-3. 整体画面要求：
-   - 画面丰富有层次，不能太平淡
-   - 有前景、中景、远景的层次感
-   - 整体色调统一协调，符合所选风格
-   - 有氛围感：阳光、光影、虚实结合
-   - 有装饰元素：树木、花草、云朵等自然元素点缀
+【重要约束】
+1. 所有中文文字描述都要简洁清晰
+2. 每个景点要有：名称、游玩时长、特色描述（info_bubble）
+3. 路线连接必须是实线路径，不是虚线
+4. 画面要丰富有层次，不能平淡
+5. image_prompt字段要是完整的中文描述，可直接用于AI生图
+6. 返回的JSON必须能被JSON.parse解析
 
-4. 绝对禁止：
-   - 不要任何文字、标签、hashtag
-   - 不要人脸、人物特写
-   - 不要虚线、虚线路径
-
-请直接返回中文提示词，纯文本，直接用于AI生图：
-`;
+请直接返回JSON，不要有任何其他内容：`;
 
   try {
-    console.log('正在调用 DeepSeek 优化提示词...');
+    console.log('正在调用 DeepSeek 生成JSON提示词...');
 
     const response = await axios.post(
       config.ai.apiUrl,
@@ -119,8 +154,8 @@ export async function optimizePrompt(city, style, spots) {
         messages: [
           { role: 'user', content: prompt }
         ],
-        temperature: 0.8,
-        max_tokens: 1000
+        temperature: 0.7,
+        max_tokens: 2000
       },
       {
         headers: {
@@ -131,26 +166,92 @@ export async function optimizePrompt(city, style, spots) {
       }
     );
 
-    const optimizedPrompt = response.data.choices[0].message.content.trim();
-    console.log('DeepSeek 优化后的提示词:', optimizedPrompt);
-    return optimizedPrompt;
+    let jsonPrompt = response.data.choices[0].message.content.trim();
+
+    // 提取JSON（可能有markdown代码块）
+    const jsonMatch = jsonPrompt.match(/```json\n?([\s\S]*?)\n?```/) || jsonPrompt.match(/```\n?([\s\S]*?)\n?```/);
+    if (jsonMatch) {
+      jsonPrompt = jsonMatch[1];
+    }
+
+    console.log('DeepSeek 生成的JSON提示词:', jsonPrompt);
+
+    // 验证JSON是否有效
+    try {
+      JSON.parse(jsonPrompt);
+    } catch (e) {
+      console.error('JSON解析失败，重新生成...');
+      // 返回一个默认的JSON
+      jsonPrompt = generateDefaultJsonPrompt(city, style, spots, styleConfig);
+    }
+
+    return jsonPrompt;
 
   } catch (error) {
-    console.error('提示词优化失败:', error.message, error.response?.data);
-    // 生成包含详细景点信息的备用提示词
-    const spotNames = spots.map(s => s.name).join('、');
-    const spotVisuals = spots.map(s => `${s.name}标志性建筑或景观`).join('、');
-    return `小红书旅行打卡地图，${city}景点：${spotVisuals}，手绘地图风格，实线路径连接各景点，${styleConfig.atmosphere}，${styleConfig.colors}，画面丰富有层次，${styleConfig.mood}，阳光光影，装饰元素，画面饱满，堪比小红书爆款旅行笔记，无文字标签`;
+    console.error('提示词生成失败:', error.message);
+    return generateDefaultJsonPrompt(city, style, spots, styleConfig);
   }
+}
+
+/**
+ * 生成默认的JSON提示词
+ */
+function generateDefaultJsonPrompt(city, style, spots, styleConfig) {
+  const landmarks = spots.map((s, i) => ({
+    name: s.name,
+    icon: `标志性建筑或景观插画`,
+    position: `第${i + 1}站`,
+    info_bubble: {
+      name: s.name,
+      duration: s.duration || '1-2小时',
+      tip: s.description || '值得打卡'
+    }
+  }));
+
+  return JSON.stringify({
+    poster_type: '精美旅行打卡地图海报',
+    visual_style: {
+      art_style: styleConfig.art_style,
+      background: styleConfig.background,
+      color_palette: styleConfig.color_palette,
+      line_work: styleConfig.line_work,
+      atmosphere: '旅行的美好氛围，探索的期待感'
+    },
+    layout_elements: {
+      title_section: {
+        position: '顶部居中',
+        content: `${city}旅行打卡地图`,
+        font_style: '手绘艺术字体'
+      },
+      map_section: {
+        position: '画面中央',
+        style: '手绘旅行地图风格',
+        route_style: '实线路径连接各景点',
+        route_markers: '起点、终点、途经点标记'
+      },
+      landmarks: landmarks,
+      compass: {
+        position: '右上角',
+        style: '简约手绘指南针'
+      }
+    },
+    decoration_details: [
+      '手绘树木',
+      '简约云朵',
+      '阳光光影',
+      '装饰框'
+    ],
+    image_prompt: `小红书风格旅行打卡地图，${city}景点：${spots.map(s => s.name).join('、')}，手绘地图风格，${styleConfig.art_style}，${styleConfig.background}，${styleConfig.color_palette}，实线连接各景点，画面丰富有层次感，氛围美好，无文字标签`
+  }, null, 2);
 }
 
 /**
  * 生成小红书风格打卡地图海报
  */
 export async function generatePoster(city, style, spots) {
-  // 先用 DeepSeek 优化提示词
-  console.log('正在生成精美打卡地图...');
-  const optimizedPrompt = await optimizePrompt(city, style, spots);
+  // 先用 DeepSeek 生成完整JSON提示词
+  console.log('正在生成JSON提示词...');
+  const jsonPrompt = await optimizePrompt(city, style, spots);
 
   console.log('正在调用 Nano Banana Pro 图片生成...');
 
@@ -159,7 +260,7 @@ export async function generatePoster(city, style, spots) {
       config.nanobananaPro.apiUrl,
       {
         model: "nano-banana-pro",
-        prompt: optimizedPrompt,
+        prompt: jsonPrompt,
         aspectRatio: "3:4",
         imageSize: "1K",
         webHook: "-1",
