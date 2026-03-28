@@ -24,8 +24,10 @@ export async function generatePoster(city, style, spots) {
 
   const prompt = JSON.stringify(promptData, null, 2);
 
-  // 尝试使用webhook="-1"立即获取任务id，然后轮询结果
+  console.log('正在调用图片生成API...');
+
   try {
+    // 尝试使用webhook="-1"立即获取任务id，然后轮询结果
     const submitResponse = await axios.post(
       config.nanobananaPro.apiUrl,
       {
@@ -40,9 +42,12 @@ export async function generatePoster(city, style, spots) {
         headers: {
           'Authorization': `Bearer ${config.nanobananaPro.apiKey}`,
           'Content-Type': 'application/json'
-        }
+        },
+        timeout: 30000
       }
     );
+
+    console.log('提交响应:', submitResponse.data);
 
     const taskId = submitResponse.data?.data?.id;
 
@@ -50,19 +55,15 @@ export async function generatePoster(city, style, spots) {
       throw new Error('无法获取任务ID');
     }
 
+    console.log('任务ID:', taskId);
+
     // 轮询获取结果
     const imageUrl = await pollForResult(taskId);
     return imageUrl;
 
   } catch (error) {
-    console.error('图片生成失败:', error.message);
-
-    // 如果上述方式失败，尝试流式响应方式
-    if (error.message.includes('任务ID') || error.response?.status !== 200) {
-      return await generatePosterStream(prompt);
-    }
-
-    throw error;
+    console.error('图片生成失败:', error.message, error.response?.data);
+    throw new Error(`图片生成失败: ${error.message}`);
   }
 }
 
@@ -71,6 +72,8 @@ export async function generatePoster(city, style, spots) {
  */
 async function pollForResult(taskId, maxAttempts = 60) {
   const resultUrl = config.nanobananaPro.apiUrl.replace('/draw/nano-banana', '/draw/result');
+
+  console.log('开始轮询结果...');
 
   for (let i = 0; i < maxAttempts; i++) {
     try {
@@ -81,13 +84,17 @@ async function pollForResult(taskId, maxAttempts = 60) {
           headers: {
             'Authorization': `Bearer ${config.nanobananaPro.apiKey}`,
             'Content-Type': 'application/json'
-          }
+          },
+          timeout: 10000
         }
       );
 
       const data = response.data?.data;
 
+      console.log(`轮询 ${i + 1}:`, data?.status);
+
       if (data?.status === 'succeeded' && data?.results?.[0]?.url) {
+        console.log('图片生成成功!');
         return data.results[0].url;
       }
 
@@ -104,67 +111,4 @@ async function pollForResult(taskId, maxAttempts = 60) {
   }
 
   throw new Error('图片生成超时');
-}
-
-/**
- * 流式响应方式
- */
-async function generatePosterStream(prompt) {
-  const response = await axios.post(
-    config.nanobananaPro.apiUrl,
-    {
-      model: "nano-banana-pro",
-      prompt: prompt,
-      aspectRatio: "3:4",
-      imageSize: "1K",
-      shutProgress: true
-    },
-    {
-      headers: {
-        'Authorization': `Bearer ${config.nanobananaPro.apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      responseType: 'stream'
-    }
-  );
-
-  // 解析流式响应，提取图片URL
-  return new Promise((resolve, reject) => {
-    let data = '';
-    response.data.on('data', (chunk) => {
-      data += chunk.toString();
-    });
-    response.data.on('end', () => {
-      try {
-        // 解析每个行的JSON数据
-        const lines = data.split('\n').filter(line => line.trim());
-        let imageUrl = '';
-
-        for (const line of lines) {
-          try {
-            const parsed = JSON.parse(line);
-            if (parsed.results && parsed.results[0] && parsed.results[0].url) {
-              imageUrl = parsed.results[0].url;
-              break;
-            }
-            if (parsed.status === 'succeeded' && parsed.results && parsed.results[0]) {
-              imageUrl = parsed.results[0].url;
-              break;
-            }
-          } catch (e) {
-            continue;
-          }
-        }
-
-        if (imageUrl) {
-          resolve(imageUrl);
-        } else {
-          reject(new Error('图片生成失败'));
-        }
-      } catch (e) {
-        reject(new Error('解析图片响应失败: ' + e.message));
-      }
-    });
-    response.data.on('error', reject);
-  });
 }
