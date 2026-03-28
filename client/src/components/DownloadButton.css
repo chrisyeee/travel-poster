@@ -1,0 +1,17 @@
+.download-button {
+  display: block;
+  margin: 20px auto 0;
+  padding: 12px 30px;
+  font-size: 16px;
+  background: #fff;
+  color: #333;
+  border: 2px solid #ff2442;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.download-button:hover {
+  background: #ff2442;
+  color: #fff;
+}
