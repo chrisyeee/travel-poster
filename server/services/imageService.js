@@ -2,6 +2,63 @@ import axios from 'axios';
 import config from '../config/index.js';
 
 /**
+ * 优化图片生成的提示词
+ * 使用AI将景点信息优化为更适合小红书风格的提示词
+ * @param {string} city - 城市名称
+ * @param {string} style - 风格
+ * @param {Array} spots - 景点列表
+ * @returns {Promise<string>} 优化后的提示词
+ */
+export async function optimizePrompt(city, style, spots) {
+  const prompt = `你是一个小红书图片提示词优化专家。
+
+请根据以下信息，生成一个适合AI生图的简洁提示词：
+
+城市：${city}
+风格：${style}
+景点列表：
+${spots.map((s, i) => `${i + 1}. ${s.name}`).join('\n')}
+
+要求：
+1. 不要任何tag标签（如#旅行 #打卡等）
+2. 文字越少越好，最多保留5-8个关键词
+3. 风格要像小红书打卡照片：清新、自然、生活感
+4. 突出场景氛围，不要列出具体文字信息
+
+请直接返回优化后的提示词（纯文本，不要JSON，不要代码块）：
+`;
+
+  try {
+    const response = await axios.post(
+      config.ai.apiUrl,
+      {
+        model: 'nano-banana-fast',
+        messages: [
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${config.ai.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000
+      }
+    );
+
+    const optimizedPrompt = response.data.choices[0].message.content.trim();
+    console.log('优化后的提示词:', optimizedPrompt);
+    return optimizedPrompt;
+
+  } catch (error) {
+    console.error('提示词优化失败:', error.message);
+    // 如果优化失败，使用默认的简洁提示词
+    return `${city}旅行打卡，${style}风格，${spots.slice(0,3).map(s => s.name).join('、')}，清新自然，小红书风格`;
+  }
+}
+
+/**
  * 生成小红书风格海报
  * @param {string} city - 城市名称
  * @param {string} style - 风格
@@ -9,17 +66,19 @@ import config from '../config/index.js';
  * @returns {Promise<string>} 图片URL
  */
 export async function generatePoster(city, style, spots) {
-  // 构建JSON格式的prompt
+  // 先优化提示词
+  console.log('正在优化提示词...');
+  const optimizedPrompt = await optimizePrompt(city, style, spots);
+
+  // 构建JSON格式的prompt传给Nano Banana Pro
   const promptData = {
     city: city,
     style: style,
-    spots: spots.map((spot, index) => ({
-      name: spot.name,
-      description: spot.description,
-      order: index + 1
-    })),
+    mainSpots: spots.slice(0, 5).map(s => s.name),
+    optimizedPrompt: optimizedPrompt,
     imageSize: "1240x1660",
-    format: "竖版3:4小红书图文笔记风格，地图形式展示路线打卡点"
+    aspectRatio: "3:4",
+    quality: "high quality, detailed,xiaohongshu style, travel photo aesthetic"
   };
 
   const prompt = JSON.stringify(promptData, null, 2);
@@ -27,7 +86,7 @@ export async function generatePoster(city, style, spots) {
   console.log('正在调用图片生成API...');
 
   try {
-    // 尝试使用webhook="-1"立即获取任务id，然后轮询结果
+    // 使用webhook="-1"立即获取任务id，然后轮询结果
     const submitResponse = await axios.post(
       config.nanobananaPro.apiUrl,
       {
