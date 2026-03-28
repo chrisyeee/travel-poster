@@ -1,0 +1,36 @@
+.style-selector {
+  margin-bottom: 30px;
+}
+
+.style-label {
+  display: block;
+  margin-bottom: 12px;
+  color: #666;
+  font-size: 14px;
+}
+
+.style-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.style-option {
+  padding: 10px 20px;
+  border: 2px solid #eee;
+  border-radius: 20px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.style-option:hover {
+  border-color: var(--accent-color);
+}
+
+.style-option.active {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #333;
+}
